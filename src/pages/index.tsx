@@ -1,11 +1,42 @@
 import Head from "next/head";
-import Image from "next/image";
-import { Inter } from "next/font/google";
-import styles from "@/styles/Home.module.css";
+import axios from "axios";
+import { useState } from "react";
 
-const inter = Inter({ subsets: ["latin"] });
+const convertBase64toBlob = (
+  b64Data: string,
+  contentType = "",
+  sliceSize = 512
+) => {
+  const byteCharacters = atob(b64Data);
+  const byteArrays = [];
+
+  for (let offset = 0; offset < byteCharacters?.length; offset += sliceSize) {
+    const slice = byteCharacters?.slice(offset, offset + sliceSize);
+    const byteNumbers = new Array(slice?.length);
+
+    for (let i = 0; i < slice?.length; i += 1) {
+      byteNumbers[i] = slice?.charCodeAt(i);
+    }
+
+    const byteArray = new Uint8Array(byteNumbers);
+    byteArrays?.push(byteArray);
+  }
+
+  const blob = new Blob(byteArrays, { type: contentType });
+  return blob;
+};
 
 export default function Home() {
+  const [pdfResponse, setPdfResponse] = useState("");
+
+  const loadPDF = async () => {
+    const response = await axios.get("http://localhost:3000/api/return-pdf");
+    const data = response?.data;
+    const blob = convertBase64toBlob(data, "application/pdf");
+    const blobUrl = URL.createObjectURL(blob);
+    setPdfResponse(blobUrl);
+  };
+
   return (
     <>
       <Head>
@@ -14,100 +45,49 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={`${styles.main} ${inter.className}`}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>src/pages/index.tsx</code>
-          </p>
+      <main>
+        <button
+          onClick={() => loadPDF()}
+          style={{
+            backgroundColor: "blue",
+            fontWeight: "bold",
+            width: "200px",
+            height: "50px",
+            marginLeft: "10px",
+            marginTop: "10px",
+            borderRadius: "10px",
+          }}
+        >
+          Load PDF
+        </button>
+
+        {pdfResponse?.length > 0 && (
           <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
+            <div
+              style={{
+                width: "50%",
+                height: "100%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                margin: "0px auto",
+                padding: 0,
+              }}
             >
-              By{" "}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
+              <object
+                width="1920"
+                height="1080"
+                type="application/pdf"
+                data={pdfResponse}
+              >
+                <p>
+                  Insert your error message here, if the PDF cannot be
+                  displayed.
+                </p>
+              </object>
+            </div>
           </div>
-        </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-        </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
+        )}
       </main>
     </>
   );
